@@ -58,12 +58,12 @@ def main():
     '''
     do the thing
     '''
-    parser = MyParser(description="fast_puller - extraction of specific fast5 files")
+    parser = MyParser(description="fast_puller - extraction of specific nanopore fast5 files")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-q", "--fastq",
-                        help="fastq.gz with cell reads")
+                        help="fastq.gz for read ids")
     group.add_argument("-f", "--paf",
-                        help="paf alignment file for reads")
+                        help="paf alignment file for read ids")
     group.add_argument("-r", "--reads",
                         help="flat file of read ids")
     parser.add_argument("-b", "--fast5",
