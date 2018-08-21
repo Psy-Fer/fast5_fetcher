@@ -1,7 +1,7 @@
 # fast5_fetcher
 Doing the heavy lifting for you.
 
-<p align="center"><img src="images/fetch.png" alt="fast5_fetcher" width="50%" height="50%"></p>
+<p align="center"><img src="images/fetch.jpg" alt="fast5_fetcher" width="50%" height="50%"></p>
 
 Fast5 Fetcher is a tool for fetching fast5 files after filtering via demultiplexing, alignment, or other, to improve downstream processing efficiency of nanopore sequencing data.
 
