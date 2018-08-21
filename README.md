@@ -64,13 +64,13 @@ Inputs can be gzipped or not. I'd recommend gzipping to save that precious hpc q
 usage: fast5_fetcher.py [-h] [-q FASTQ | -f PAF | -r READS] [-b FAST5]
                         [-s SEQ_SUM] [-i INDEX] [-o OUTPUT] [-p PROCS] [-z]
 
-fast_puller - extraction of specific fast5 files
+fast_puller - extraction of specific nanopore fast5 files
 
 optional arguments:
   -h, --help            show this help message and exit
   -q FASTQ, --fastq FASTQ
-                        fastq.gz with cell reads
-  -f PAF, --paf PAF     paf alignment file for reads
+                        fastq.gz for read ids
+  -f PAF, --paf PAF     paf alignment file for read ids
   -r READS, --reads READS
                         flat file of read ids
   -b FAST5, --fast5 FAST5
@@ -86,7 +86,6 @@ optional arguments:
   -z, --pppp            Print out tar commands in batches for further
                         processing
 ```
-
 
 #### To run:
 ```bash
