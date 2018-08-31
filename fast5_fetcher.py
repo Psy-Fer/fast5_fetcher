@@ -1,29 +1,38 @@
-
-import os, sys, gzip, io
+import os
+import sys
+import gzip
+import io
 import subprocess
 import traceback
 import argparse
 from functools import partial
 '''
-   
+
     James M. Ferguson (j.ferguson@garvan.org.au)
     Genomic Technologies
     Garvan Institute
     Copyright 2017
-    
+
     Fast5 Fetcher is designed to help manage fast5 file data storage and organisation.
     It takes 3 files as input: fastq/paf/flat, sequencing_summary, index
-    
-    --------------------------------------------------------------------------------------   
+
+    --------------------------------------------------------------------------------------
     version 1.0 - initial
     version 1.2 - added argparser and buffered gz streams
-    version 1.3 - added paf input 
+    version 1.3 - added paf input
     version 1.4 - added read id flat file input
     version 1.5 - pppp print output instead of extracting
     version 1.6 - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
     version 1.7 - cleaned up a bit to share and removed some hot and steamy features
-    
-    
+    version 1.8 - Added functionality for un-tarred file structures and seq_sum only
+
+
+    TODO:
+        - Python 3 compatibility
+        - autodetect file structures
+        - autobuild index file - make it a sub script as well
+        - Consider using csv.DictReader() instead of wheel building
+
     -----------------------------------------------------------------------------
     MIT License
 
@@ -47,6 +56,8 @@ from functools import partial
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 '''
+
+
 class MyParser(argparse.ArgumentParser):
     def error(self, message):
         sys.stderr.write('error: %s\n' % message)
@@ -58,53 +69,56 @@ def main():
     '''
     do the thing
     '''
-    parser = MyParser(description="fast_puller - extraction of specific nanopore fast5 files")
+    parser = MyParser(
+        description="fast_fetcher - extraction of specific nanopore fast5 files")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-q", "--fastq",
-                        help="fastq.gz for read ids")
-    group.add_argument("-f", "--paf",
-                        help="paf alignment file for read ids")
-    group.add_argument("-r", "--reads",
-                        help="flat file of read ids")
-    parser.add_argument("-b", "--fast5",
-                        help="fast5.tar path to extract from")
+                       help="fastq.gz for read ids")
+    group.add_argument("-p", "--paf",
+                       help="paf alignment file for read ids")
+    group.add_argument("-f", "--flat",
+                       help="flat file of read ids")
+    # parser.add_argument("-b", "--fast5",
+    #                    help="fast5.tar path to extract from - individual")
     parser.add_argument("-s", "--seq_sum",
                         help="sequencing_summary.txt.gz file")
     parser.add_argument("-i", "--index",
                         help="index.gz file mapping fast5 files in tar archives")
     parser.add_argument("-o", "--output",
                         help="output directory for extracted fast5s")
-    parser.add_argument("-p", "--procs", type=int,
-                        help="Number of CPUs to use - TODO: NOT YET IMPLEMENTED")
+    # parser.add_argument("-t", "--procs", type=int,
+    #                    help="Number of CPUs to use - TODO: NOT YET IMPLEMENTED")
     parser.add_argument("-z", "--pppp", action="store_true",
                         help="Print out tar commands in batches for further processing")
     args = parser.parse_args()
-    
+
     # print help if no arguments given
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    
+
     print >> sys.stderr, "Starting things up!"
-    
+
     p_dic = {}
     if args.pppp:
         print >> sys.stderr, "PPPP state! Not extracting, exporting tar commands"
-        
+
+    ids = []
     if args.fastq:
         ids = get_fq_reads(args.fastq)
     elif args.paf:
         ids = get_paf_reads(args.paf)
-    elif args.reads:
-        ids = get_flat_reads(args.reads)
+    elif args.flat:
+        ids = get_flat_reads(args.flat)
     filenames = get_filenames(args.seq_sum, ids)
-    
+
+    '''
     if args.fast5:
         paths = get_paths(args.index, filenames, args.fast5)
         # place multiprocessing pool here
         # print >> sys.stderr, "All the paths: \n", paths
         print >> sys.stderr, "extracting..."
-        for p, f  in paths:
+        for p, f in paths:
             if args.pppp:
                 if p in p_dic:
                     p_dic[p].append(f)
@@ -117,33 +131,33 @@ def main():
             except:
                 traceback.print_exc()
                 print >> sys.stderr, "Failed to extract:", p, f
-    
     else:
-        paths = get_paths(args.index, filenames)
-        print >> sys.stderr, "extracting..."
-        # place multiprocessing pool here
-        for p, f  in paths:
-            if args.pppp:
-                if p in p_dic:
-                    p_dic[p].append(f)
-                else:
-                    p_dic[p] = [f]
-                continue
-            try:
-                extract_file(p, f, args.output)
-            except:
-                traceback.print_exc()
-                print >> sys.stderr, "Failed to extract:", p, f
-    
+    '''
+    paths = get_paths(args.index, filenames)
+    print >> sys.stderr, "extracting..."
+    # place multiprocessing pool here
+    for p, f in paths:
+        if args.pppp:
+            if p in p_dic:
+                p_dic[p].append(f)
+            else:
+                p_dic[p] = [f]
+            continue
+        try:
+            extract_file(p, f, args.output)
+        except:
+            traceback.print_exc()
+            print >> sys.stderr, "Failed to extract:", p, f
+    # For each .tar file, write a file with the tarball name as filename.tar.txt
+    # and contains a list of files to extract - input for batch_tater.py
     for i in p_dic:
         fname = args.output + i.split('/')[-1] + ".txt"
         with open(fname, 'w') as f:
             for j in p_dic[i]:
                 f.write(j)
                 f.write('\n')
-    
-    print >> sys.stderr, "done!"
 
+    print >> sys.stderr, "done!"
 
 
 def get_fq_reads(fastq):
@@ -222,13 +236,17 @@ def get_flat_reads(filename):
                 idx = line[x:]
                 read_ids.add(idx)
     return read_ids
-    
 
 
 def get_filenames(seq_sum, ids):
     '''
     match read ids with seq_sum to pull filenames
     '''
+    # for when using seq_sum for filtering, and not fq,paf,flat
+    ss_only = False
+    if not ids:
+        ss_only = True
+
     head = True
     files = set()
     if seq_sum.endswith('.gz'):
@@ -239,8 +257,11 @@ def get_filenames(seq_sum, ids):
                     continue
                 line = line.strip('\n')
                 line = line.split()
-                if line[1] in ids:
+                if ss_only:
                     files.add(line[0])
+                else:
+                    if line[1] in ids:
+                        files.add(line[0])
     else:
         with open(seq_sum, 'rb') as ss:
             for line in ss:
@@ -249,19 +270,42 @@ def get_filenames(seq_sum, ids):
                     continue
                 line = line.strip('\n')
                 line = line.split()
-                if line[1] in ids:
+                if ss_only:
                     files.add(line[0])
+                else:
+                    if line[1] in ids:
+                        files.add(line[0])
     return files
-    
-
 
 
 def get_paths(index_file, filenames, f5=None):
     '''
     Read index and extract full paths for file extraction
     '''
-    tar = ''
+    tar = False
     paths = []
+    c = 0
+    if index_file.endswith('.gz'):
+        with gzip.open(index_file, 'rb') as idz:
+            for line in io.BufferedReader(idz):
+                line = line.strip('\n')
+                c += 1
+                if c > 10:
+                    break
+                if line.endswith('.tar'):
+                    tar = True
+                    break
+    else:
+        with open(index_file, 'rb') as idx:
+            for line in idx:
+                line = line.strip('\n')
+                c += 1
+                if c > 10:
+                    break
+                if line.endswith('.tar'):
+                    tar = True
+                    break
+    '''
     if f5:
         locker = False
         if index_file.endswith('.gz'):
@@ -281,7 +325,7 @@ def get_paths(index_file, filenames, f5=None):
                     else:
                         continue
         else:
-             with open(index_file, 'rb') as idx:
+            with open(index_file, 'rb') as idx:
                 for line in idx:
                     line = line.strip('\n')
                     if line.endswith('.tar'):
@@ -297,10 +341,12 @@ def get_paths(index_file, filenames, f5=None):
                     else:
                         continue
     else:
-        if index_file.endswith('.gz'):
-            with gzip.open(index_file, 'rb') as idz:
-                for line in io.BufferedReader(idz):
-                    line = line.strip('\n')
+    '''
+    if index_file.endswith('.gz'):
+        with gzip.open(index_file, 'rb') as idz:
+            for line in io.BufferedReader(idz):
+                line = line.strip('\n')
+                if tar:
                     if line.endswith('.tar'):
                         path = line
                     elif line.endswith('.fast5'):
@@ -309,11 +355,30 @@ def get_paths(index_file, filenames, f5=None):
                             paths.append([path, line])
                     else:
                         continue
-        else:
-             with open(index_file, 'rb') as idx:
-                for line in idx:
-                    line = line.strip('\n')
+                else:
+                    if not line.endswith('.fast5'):
+                        path = line
+                    elif line.endswith('.fast5'):
+                        f = line.split('/')[-1]
+                        if f in filenames:
+                            paths.append([path, line])
+                    else:
+                        continue
+    else:
+        with open(index_file, 'rb') as idx:
+            for line in idx:
+                line = line.strip('\n')
+                if tar:
                     if line.endswith('.tar'):
+                        path = line
+                    elif line.endswith('.fast5'):
+                        f = line.split('/')[-1]
+                        if f in filenames:
+                            paths.append([path, line])
+                    else:
+                        continue
+                else:
+                    if not line.endswith('.fast5'):
                         path = line
                     elif line.endswith('.fast5'):
                         f = line.split('/')[-1]
@@ -330,11 +395,16 @@ def extract_file(path, filename, save_path):
     I was using the tarfile python lib, but honestly, it sucks and was too volatile.
     if you have a better suggestion, let me know :)
     That --transform hack is awesome btw. Blows away all the leading folders. use it
+    cp for when using untarred structures. Not recommended, but here for completeness.
     '''
-    cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(path, save_path, filename)
+    if path.endswith('.tar'):
+        cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
+            path, save_path, filename)
+    else:
+        cmd = "cp {} {}".format(os.path.join(
+            path, filename), os.path.join(save_path, filename))
     subprocess.call(cmd, shell=True, executable='/bin/bash')
 
 
 if __name__ == '__main__':
     main()
-

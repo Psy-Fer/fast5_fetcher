@@ -9,12 +9,11 @@ import subprocess
     Copyright 2017
 
     batch_tater.py takes list/s of files to extract, and speeds it up a bit, by only opening
-    one tar file at a time and extracting what is needed. 
+    one tar file at a time and extracting what is needed.
 
     To run on sun grid engine using array jobs as a hacky way of doing multiprocessing.
     Also, helps check when things go wrong, and easy to relaunch failed jobs.
     Some things left in from running on some tasty nanopore single cell data.
-    There is a paper that states the limit is 2 to 6 cells.....check the array limits ;)
 
     sge file:
 
@@ -48,7 +47,7 @@ import subprocess
 '''
 
 # being lazy and using sys.argv...i mean, it is pretty lit
-tar_idx = sys.argv[1]
+index = sys.argv[1]
 tar_list = sys.argv[2]
 save_path = sys.argv[3]
 
@@ -62,7 +61,7 @@ PATH = 0
 print >> sys.stderr, "extracting:", tar_name
 
 # not elegent, but gets it done
-with open(tar_idx, 'r') as f:
+with open(index, 'r') as f:
     for l in f:
         l = l.strip('\n')
         if tar_name in l.split('/'):
@@ -71,11 +70,10 @@ with open(tar_idx, 'r') as f:
 
 # do the thing. That --transform hack is awesome. Blows away all the leading folders.
 if PATH:
-    cmd = "tar -xf {} --transform='s/.*\///' -C {} -T {}".format(PATH, save_path, tar_list)
+    cmd = "tar -xf {} --transform='s/.*\///' -C {} -T {}".format(
+        PATH, save_path, tar_list)
     subprocess.call(cmd, shell=True, executable='/bin/bash')
 
 else:
     print >> sys.stderr, "PATH not found! check index nooblet"
-    print >> sys.stderr, "inputs:", tar_idx, tar_list, tar_name
-
-
+    print >> sys.stderr, "inputs:", index, tar_list, tar_name
