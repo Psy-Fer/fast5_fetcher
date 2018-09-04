@@ -356,12 +356,10 @@ def get_paths(index_file, filenames, f5=None):
                     else:
                         continue
                 else:
-                    if not line.endswith('.fast5'):
-                        path = line
-                    elif line.endswith('.fast5'):
+                    if line.endswith('.fast5'):
                         f = line.split('/')[-1]
                         if f in filenames:
-                            paths.append([path, line])
+                            paths.append(['', line])
                     else:
                         continue
     else:
@@ -378,12 +376,10 @@ def get_paths(index_file, filenames, f5=None):
                     else:
                         continue
                 else:
-                    if not line.endswith('.fast5'):
-                        path = line
-                    elif line.endswith('.fast5'):
+                    if line.endswith('.fast5'):
                         f = line.split('/')[-1]
                         if f in filenames:
-                            paths.append([path, line])
+                            paths.append(['', line])
                     else:
                         continue
     return paths
@@ -401,8 +397,8 @@ def extract_file(path, filename, save_path):
         cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
             path, save_path, filename)
     else:
-        cmd = "cp {} {}".format(os.path.join(
-            path, filename), os.path.join(save_path, filename))
+        cmd = "cp {} {}".format(filename, os.path.join(
+            save_path, filename.split('/')[-1]))
     subprocess.call(cmd, shell=True, executable='/bin/bash')
 
 

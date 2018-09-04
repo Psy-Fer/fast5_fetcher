@@ -151,7 +151,7 @@ How the index is built depends on which file structure you are using. It will wo
 ##### - Raw structure (not preferred)
 
 ```bash
-for file in $(pwd)/reads/*; echo $file; done >> name.index
+for file in $(pwd)/reads/*/*;do echo $file; done >> name.index
 
 gzip name.index
 ```
@@ -170,7 +170,7 @@ gzip name.index
 for file in $(pwd)/fast5/*fast5.tar; do echo $file; tar -tf $file; done >> name.index
 ```
 
-then cat them all together and gzip.
+If you have multiple experiments, then cat them all together and gzip.
 
 ```bash
 for file in ./*.index; do cat $file; done >> ../all.name.index
