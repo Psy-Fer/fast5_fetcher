@@ -150,12 +150,13 @@ def main():
             print >> sys.stderr, "Failed to extract:", p, f
     # For each .tar file, write a file with the tarball name as filename.tar.txt
     # and contains a list of files to extract - input for batch_tater.py
-    for i in p_dic:
-        fname = args.output + i.split('/')[-1] + ".txt"
-        with open(fname, 'w') as f:
-            for j in p_dic[i]:
-                f.write(j)
-                f.write('\n')
+    if args.pppp:
+        for i in p_dic:
+            fname = args.output + i.split('/')[-1] + ".txt"
+            with open(fname, 'w') as f:
+                for j in p_dic[i]:
+                    f.write(j)
+                    f.write('\n')
 
     print >> sys.stderr, "done!"
 
