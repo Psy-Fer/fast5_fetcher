@@ -17,14 +17,15 @@ from functools import partial
     It takes 3 files as input: fastq/paf/flat, sequencing_summary, index
 
     --------------------------------------------------------------------------------------
-    version 1.0 - initial
-    version 1.2 - added argparser and buffered gz streams
-    version 1.3 - added paf input
-    version 1.4 - added read id flat file input
-    version 1.5 - pppp print output instead of extracting
-    version 1.6 - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
-    version 1.7 - cleaned up a bit to share and removed some hot and steamy features
-    version 1.8 - Added functionality for un-tarred file structures and seq_sum only
+    version 0.0 - initial
+    version 0.2 - added argparser and buffered gz streams
+    version 0.3 - added paf input
+    version 0.4 - added read id flat file input
+    version 0.5 - pppp print output instead of extracting
+    version 0.6 - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
+    version 0.7 - cleaned up a bit to share and removed some hot and steamy features
+    version 0.8 - Added functionality for un-tarred file structures and seq_sum only
+    version 1.0 - First release 
 
 
     TODO:
