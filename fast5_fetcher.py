@@ -170,8 +170,7 @@ def get_fq_reads(fastq):
     read_ids = set()
     if fastq.endswith('.gz'):
         with gzip.open(fastq, 'rb') as gz:
-            fq = io.BufferedReader(gz)
-            for line in fq:
+            for line in io.BufferedReader(gz):
                 c += 1
                 line = line.strip('\n')
                 if c == 1:
