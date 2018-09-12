@@ -6,6 +6,9 @@
 
 **fast5_fetcher** is a tool for fetching nanopore fast5 files to save time and simplify downstream analysis.
 
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
+
 ## Contents
 
 # Background
@@ -353,6 +356,12 @@ echo $CMD && $CMD
 ## Acknowledgements
 
 I would like to thank the rest of my lab in Genomic Technologies team from the [Garvan Institute](https://www.garvan.org.au/) for their feedback on the development of this tool.
+
+## Cite
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
+
+James M. Ferguson. Psy-Fer/fast5_fetcher: Initial release of fast5_fetcher. (2018). doi:10.5281/zenodo.1413903
 
 ## License
 
