@@ -361,7 +361,7 @@ I would like to thank the rest of my lab in Genomic Technologies team from the [
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
 
-James M. Ferguson. Psy-Fer/fast5_fetcher: Initial release of fast5_fetcher. (2018). doi:10.5281/zenodo.1413903
+James M. Ferguson, & Martin A. Smith. (2018, September 12). Psy-Fer/fast5_fetcher: Initial release of fast5_fetcher (Version v1.0). Zenodo. http://doi.org/10.5281/zenodo.1413903
 
 ## License
 
