@@ -355,7 +355,7 @@ echo $CMD && $CMD
 
 ## Acknowledgements
 
-I would like to thank the rest of my lab in Genomic Technologies team from the [Garvan Institute](https://www.garvan.org.au/) for their feedback on the development of this tool.
+I would like to thank the rest of my lab (Shaun Carswell, Kirston Barton) in Genomic Technologies team from the [Garvan Institute](https://www.garvan.org.au/) for their feedback on the development of this tool.
 
 ## Cite
 
