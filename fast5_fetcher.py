@@ -13,7 +13,7 @@ from functools import partial
     Garvan Institute
     Copyright 2017
 
-    Fast5 Fetcher is designed to help manage fast5 file data storage and organisation.
+    fast5_fetcher is designed to help manage fast5 file data storage and organisation.
     It takes 3 files as input: fastq/paf/flat, sequencing_summary, index
 
     --------------------------------------------------------------------------------------
@@ -25,7 +25,8 @@ from functools import partial
     version 0.6 - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
     version 0.7 - cleaned up a bit to share and removed some hot and steamy features
     version 0.8 - Added functionality for un-tarred file structures and seq_sum only
-    version 1.0 - First release 
+    version 1.0 - First release
+    version 1.1 - refactor with dicswitch and batch_tater updates
 
 
     TODO:
@@ -33,6 +34,8 @@ from functools import partial
         - autodetect file structures
         - autobuild index file - make it a sub script as well
         - Consider using csv.DictReader() instead of wheel building
+        - flesh out batch_tater and give better examples and clearer how-to
+        - options to build new index/SS of fetched fast5s
 
     -----------------------------------------------------------------------------
     MIT License
@@ -113,27 +116,6 @@ def main():
         ids = get_flat_reads(args.flat)
     filenames = get_filenames(args.seq_sum, ids)
 
-    '''
-    if args.fast5:
-        paths = get_paths(args.index, filenames, args.fast5)
-        # place multiprocessing pool here
-        # print >> sys.stderr, "All the paths: \n", paths
-        print >> sys.stderr, "extracting..."
-        for p, f in paths:
-            if args.pppp:
-                if p in p_dic:
-                    p_dic[p].append(f)
-                else:
-                    p_dic[p] = [f]
-                continue
-            try:
-                #print >> sys.stderr, "extracting:", p, f
-                extract_file(p, f, args.output)
-            except:
-                traceback.print_exc()
-                print >> sys.stderr, "Failed to extract:", p, f
-    else:
-    '''
     paths = get_paths(args.index, filenames)
     print >> sys.stderr, "extracting..."
     # place multiprocessing pool here
@@ -144,22 +126,38 @@ def main():
             else:
                 p_dic[p] = [f]
             continue
-        try:
-            extract_file(p, f, args.output)
-        except:
-            traceback.print_exc()
-            print >> sys.stderr, "Failed to extract:", p, f
+        else:
+            try:
+                extract_file(p, f, args.output)
+            except:
+                traceback.print_exc()
+                print >> sys.stderr, "Failed to extract:", p, f
     # For each .tar file, write a file with the tarball name as filename.tar.txt
     # and contains a list of files to extract - input for batch_tater.py
     if args.pppp:
-        for i in p_dic:
-            fname = args.output + i.split('/')[-1] + ".txt"
-            with open(fname, 'w') as f:
-                for j in p_dic[i]:
-                    f.write(j)
-                    f.write('\n')
+        with open("tater_master.txt", 'w') as m:
+            for i in p_dic:
+                fname = "tater_" + i.split('/')[-1] + ".txt"
+                m_entry = "{}\t{}".format(fname, i)
+                m.write(m_entry)
+                m.write('\n')
+                with open(fname, 'w') as f:
+                    for j in p_dic[i]:
+                        f.write(j)
+                        f.write('\n')
 
     print >> sys.stderr, "done!"
+
+
+def dicSwitch(i):
+    '''
+    A switch to handle file opening and reduce duplicated code
+    '''
+    open_method = {
+        "gz": gzip.open,
+        "norm": open
+    }
+    return open_method[i]
 
 
 def get_fq_reads(fastq):
@@ -170,25 +168,20 @@ def get_fq_reads(fastq):
     c = 0
     read_ids = set()
     if fastq.endswith('.gz'):
-        with gzip.open(fastq, 'rb') as gz:
-            for line in io.BufferedReader(gz):
-                c += 1
-                line = line.strip('\n')
-                if c == 1:
-                    idx = line.split()[0][1:]
-                    read_ids.add(idx)
-                elif c >= 4:
-                    c = 0
+        f_read = dicSwitch('gz')
     else:
-        with open(fastq, 'rb') as fq:
-            for line in fq:
-                c += 1
-                line = line.strip('\n')
-                if c == 1:
-                    idx = line.split()[0][1:]
-                    read_ids.add(idx)
-                elif c >= 4:
-                    c = 0
+        f_read = dicSwitch('norm')
+    with f_read(fastq, 'rb') as fq:
+        if fastq.endswith('.gz'):
+            fq = io.BufferedReader(fq)
+        for line in fq:
+            c += 1
+            line = line.strip('\n')
+            if c == 1:
+                idx = line.split()[0][1:]
+                read_ids.add(idx)
+            elif c >= 4:
+                c = 0
     return read_ids
 
 
@@ -197,7 +190,13 @@ def get_paf_reads(reads):
     Parse paf file to pull read ids (from minimap2 alignment)
     '''
     read_ids = set()
-    with open(reads, 'rb') as fq:
+    if reads.endswith('.gz'):
+        f_read = dicSwitch('gz')
+    else:
+        f_read = dicSwitch('norm')
+    with f_read(reads, 'rb') as fq:
+        if reads.endswith('.gz'):
+            fq = io.BufferedReader(fq)
         for line in fq:
             line = line.strip('\n')
             line = line.split()
@@ -213,29 +212,22 @@ def get_flat_reads(filename):
     read_ids = set()
     check = True
     if filename.endswith('.gz'):
-        with gzip.open(filename, 'rb') as gz:
-            for line in io.BufferedReader(gz):
-                line = line.strip('\n')
-                if check:
-                    if line[0] == '@':
-                        x = 1
-                    else:
-                        x = 0
-                    check = False
-                idx = line[x:]
-                read_ids.add(idx)
+        f_read = dicSwitch('gz')
     else:
-        with open(filename, 'rb') as fq:
-            for line in fq:
-                line = line.strip('\n')
-                if check:
-                    if line[0] == '@':
-                        x = 1
-                    else:
-                        x = 0
-                    check = False
-                idx = line[x:]
-                read_ids.add(idx)
+        f_read = dicSwitch('norm')
+    with f_read(filename, 'rb') as fq:
+        if filename.endswith('.gz'):
+            fq = io.BufferedReader(fq)
+        for line in fq:
+            line = line.strip('\n')
+            if check:
+                if line[0] == '@':
+                    x = 1
+                else:
+                    x = 0
+                check = False
+            idx = line[x:]
+            read_ids.add(idx)
     return read_ids
 
 
@@ -251,31 +243,23 @@ def get_filenames(seq_sum, ids):
     head = True
     files = set()
     if seq_sum.endswith('.gz'):
-        with gzip.open(seq_sum, 'rb') as sz:
-            for line in io.BufferedReader(sz):
-                if head:
-                    head = False
-                    continue
-                line = line.strip('\n')
-                line = line.split()
-                if ss_only:
-                    files.add(line[0])
-                else:
-                    if line[1] in ids:
-                        files.add(line[0])
+        f_read = dicSwitch('gz')
     else:
-        with open(seq_sum, 'rb') as ss:
-            for line in ss:
-                if head:
-                    head = False
-                    continue
-                line = line.strip('\n')
-                line = line.split()
-                if ss_only:
+        f_read = dicSwitch('norm')
+    with f_read(seq_sum, 'rb') as sz:
+        if seq_sum.endswith('.gz'):
+            sz = io.BufferedReader(sz)
+        for line in sz:
+            if head:
+                head = False
+                continue
+            line = line.strip('\n')
+            line = line.split()
+            if ss_only:
+                files.add(line[0])
+            else:
+                if line[1] in ids:
                     files.add(line[0])
-                else:
-                    if line[1] in ids:
-                        files.add(line[0])
     return files
 
 
@@ -287,102 +271,44 @@ def get_paths(index_file, filenames, f5=None):
     paths = []
     c = 0
     if index_file.endswith('.gz'):
-        with gzip.open(index_file, 'rb') as idz:
-            for line in io.BufferedReader(idz):
-                line = line.strip('\n')
-                c += 1
-                if c > 10:
-                    break
-                if line.endswith('.tar'):
-                    tar = True
-                    break
+        f_read = dicSwitch('gz')
     else:
-        with open(index_file, 'rb') as idx:
-            for line in idx:
-                line = line.strip('\n')
-                c += 1
-                if c > 10:
-                    break
-                if line.endswith('.tar'):
-                    tar = True
-                    break
-    '''
-    if f5:
-        locker = False
+        f_read = dicSwitch('norm')
+    # detect normal or tars
+    with f_read(index_file, 'rb') as idz:
         if index_file.endswith('.gz'):
-            with gzip.open(index_file, 'rb') as idz:
-                for line in io.BufferedReader(idz):
-                    line = line.strip('\n')
-                    if line.endswith('.tar'):
-                        if line.split('/')[-1] == f5.split('/')[-1]:
-                            path = line
-                            locker = False
-                        else:
-                            locker = True
-                    elif line.endswith('.fast5') and not locker:
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append([path, line])
-                    else:
-                        continue
-        else:
-            with open(index_file, 'rb') as idx:
-                for line in idx:
-                    line = line.strip('\n')
-                    if line.endswith('.tar'):
-                        if line.split('/')[-1] == f5.split('/')[-1]:
-                            path = line
-                            locker = False
-                        else:
-                            locker = True
-                    elif line.endswith('.fast5') and not locker:
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append([path, line])
-                    else:
-                        continue
-    else:
-    '''
-    if index_file.endswith('.gz'):
-        with gzip.open(index_file, 'rb') as idz:
-            for line in io.BufferedReader(idz):
-                line = line.strip('\n')
-                if tar:
-                    if line.endswith('.tar'):
-                        path = line
-                    elif line.endswith('.fast5'):
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append([path, line])
-                    else:
-                        continue
+            idz = io.BufferedReader(idz)
+        for line in idz:
+            line = line.strip('\n')
+            c += 1
+            if c > 10:
+                break
+            if line.endswith('.tar'):
+                tar = True
+                break
+    # extract paths
+    with f_read(index_file, 'rb') as idz:
+        if index_file.endswith('.gz'):
+            idz = io.BufferedReader(idz)
+        for line in idz:
+            line = line.strip('\n')
+            if tar:
+                if line.endswith('.tar'):
+                    path = line
+                elif line.endswith('.fast5'):
+                    f = line.split('/')[-1]
+                    if f in filenames:
+                        paths.append([path, line])
                 else:
-                    if line.endswith('.fast5'):
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append(['', line])
-                    else:
-                        continue
-    else:
-        with open(index_file, 'rb') as idx:
-            for line in idx:
-                line = line.strip('\n')
-                if tar:
-                    if line.endswith('.tar'):
-                        path = line
-                    elif line.endswith('.fast5'):
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append([path, line])
-                    else:
-                        continue
+                    continue
+            else:
+                if line.endswith('.fast5'):
+                    f = line.split('/')[-1]
+                    if f in filenames:
+                        paths.append(['', line])
                 else:
-                    if line.endswith('.fast5'):
-                        f = line.split('/')[-1]
-                        if f in filenames:
-                            paths.append(['', line])
-                    else:
-                        continue
+                    continue
+
     return paths
 
 

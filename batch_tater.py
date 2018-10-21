@@ -24,7 +24,7 @@ import subprocess
 
     mkdir ${TMPDIR}/fast5
 
-    time python batch_tater.py tar_index.txt ${BLAH} ${TMPDIR}/fast5/
+    time python batch_tater.py tater_master.txt ${BLAH} ${TMPDIR}/fast5/
 
     echo "size of files:" >&2
     du -shc ${TMPDIR}/fast5/ >&2
@@ -44,30 +44,40 @@ import subprocess
     Launch:
 
     echo $CMD && $CMD
+
+
+    stats:
+
+    fastq: 27491304
+    mapped: 11740093
+    z mode time: 10min
+    batch_tater total time: 21min
+    per job time: ~28s
+    number of CPUs: 100
 '''
 
 # being lazy and using sys.argv...i mean, it is pretty lit
-index = sys.argv[1]
+master = sys.argv[1]
 tar_list = sys.argv[2]
 save_path = sys.argv[3]
 
 # this will probs need to be changed based on naming convention
 # I think i was a little tired when I wrote this
-tar_name = '.'.join(tar_list.split('/')[-1].split('.')[:3])
+# tar_name = '.'.join(tar_list.split('/')[-1].split('.')[:3])
 
 PATH = 0
 
-# for stats later and easy job relauncing
-print >> sys.stderr, "extracting:", tar_name
-
 # not elegent, but gets it done
-with open(index, 'r') as f:
+with open(master, 'r') as f:
     for l in f:
         l = l.strip('\n')
-        if tar_name in l.split('/'):
-            PATH = l
+        l = l.split('\t')
+        if l[0] == tar_list:
+            PATH = l[1]
             break
 
+# for stats later and easy job relauncing
+print >> sys.stderr, "extracting:", tar_list
 # do the thing. That --transform hack is awesome. Blows away all the leading folders.
 if PATH:
     cmd = "tar -xf {} --transform='s/.*\///' -C {} -T {}".format(

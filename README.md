@@ -15,7 +15,7 @@
 
 Reducing the number of fast5 files per folder in a single experiment was a welcomed addition to MinKnow. However this also made it rather useful for manual basecalling on a cluster, using array jobs, where each folder is basecalled individually, producing its own `sequencing_summary.txt`, `reads.fastq`, and reads folder containing the newly basecalled fast5s. Taring those fast5 files up into a single file was needed to keep the sys admins at bay, complaining about our millions of individual files on their drives. This meant, whenever there was a need to use the fast5 files from an experiment, or many experiments, unpacking the fast5 files was a significant hurdle both in time and disk space.
 
-**fast5_fetcher** was built to  address this bottleneck. By building an index file of the tarballs, and using the `sequencing_summary.txt` file to match readIDs with fast5 filenames, only the fast5 files you need can be extracted, either temporarily in a pipeline, or permanently, reducing space and simplifying downstream work flows.
+**fast5_fetcher** was built to  address this bottleneck. By building an index file of the tarballs, and using the `sequencing_summary.txt` file to match readIDs with fast5 filenames, only the fast5 files you need can be  extracted, either temporarily in a pipeline, or permanently, reducing space and simplifying downstream work flows.
 
 # Requirements
 
@@ -312,7 +312,7 @@ Potato scripting engaged
 
 This is designed to run on the output files from `fast5_fetcher.py` using option `-z`. This writes out file lists for each tarball that contains reads you want to process. Then `batch_tater.py` can read those files, to open the individual tar files, and extract the files, meaning the file is only opened once.
 
-A recent test using the -z option on ~1.4Tb of data, across ~16/20 million files took about 10min (1CPU) to write and organise the file lists with fast5_fetch.py, and about 2min per array job to extract and repackage with batch_tater.py.
+A recent test using the -z option on ~2.2Tb of data, across ~11/27 million files took about 10min (1CPU) to write and organise the file lists with fast5_fetch.py, and about 20s per array job to extract and repackage with batch_tater.py.
 
 This is best used when you want to do something all at once and filter your reads. Other approaches may be better when you are demultiplexing.
 
@@ -331,7 +331,7 @@ BLAH=fast5/${FILE}
 
 mkdir ${TMPDIR}/fast5
 
-time python batch_tater.py name.index.gz ${BLAH} ${TMPDIR}/fast5/
+time python batch_tater.py tater_master.txt ${BLAH} ${TMPDIR}/fast5/
 
 echo "size of files:" >&2
 du -shc ${TMPDIR}/fast5/ >&2
