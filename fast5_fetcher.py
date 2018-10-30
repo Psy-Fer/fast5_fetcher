@@ -5,6 +5,7 @@ import io
 import subprocess
 import traceback
 import argparse
+import platform
 from functools import partial
 '''
 
@@ -17,17 +18,17 @@ from functools import partial
     It takes 3 files as input: fastq/paf/flat, sequencing_summary, index
 
     --------------------------------------------------------------------------------------
-    version 0.0 - initial
-    version 0.2 - added argparser and buffered gz streams
-    version 0.3 - added paf input
-    version 0.4 - added read id flat file input
-    version 0.5 - pppp print output instead of extracting
-    version 0.6 - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
-    version 0.7 - cleaned up a bit to share and removed some hot and steamy features
-    version 0.8 - Added functionality for un-tarred file structures and seq_sum only
-    version 1.0 - First release
-    version 1.1 - refactor with dicswitch and batch_tater updates
-
+    version 0.0   - initial
+    version 0.2   - added argparser and buffered gz streams
+    version 0.3   - added paf input
+    version 0.4   - added read id flat file input
+    version 0.5   - pppp print output instead of extracting
+    version 0.6   - did a dumb. changed x in s to set/dic entries O(n) vs O(1)
+    version 0.7   - cleaned up a bit to share and removed some hot and steamy features
+    version 0.8   - Added functionality for un-tarred file structures and seq_sum only
+    version 1.0   - First release
+    version 1.1   - refactor with dicswitch and batch_tater updates
+    version 1.1.1 - Bug fix on --transform method, added OS detection
 
     TODO:
         - Python 3 compatibility
@@ -82,8 +83,8 @@ def main():
                        help="paf alignment file for read ids")
     group.add_argument("-f", "--flat",
                        help="flat file of read ids")
-    # parser.add_argument("-b", "--fast5",
-    #                    help="fast5.tar path to extract from - individual")
+    parser.add_argument("--OSystem", default=platform.system(),
+                        help="running operating system - leave default unless doing odd stuff")
     parser.add_argument("-s", "--seq_sum",
                         help="sequencing_summary.txt.gz file")
     parser.add_argument("-i", "--index",
@@ -128,7 +129,7 @@ def main():
             continue
         else:
             try:
-                extract_file(p, f, args.output)
+                extract_file(args, p, f)
             except:
                 traceback.print_exc()
                 print >> sys.stderr, "Failed to extract:", p, f
@@ -312,17 +313,32 @@ def get_paths(index_file, filenames, f5=None):
     return paths
 
 
-def extract_file(path, filename, save_path):
+def extract_file(args, path, filename):
     '''
     Do the extraction.
     I was using the tarfile python lib, but honestly, it sucks and was too volatile.
     if you have a better suggestion, let me know :)
-    That --transform hack is awesome btw. Blows away all the leading folders. use it
+    That --transform hack is awesome btw. Blows away all the leading folders. use
     cp for when using untarred structures. Not recommended, but here for completeness.
+
+    --transform not working on MacOS. Need to use gtar
+    Thanks to Kai Martin for picking that one up!
+
     '''
+    OSystem = ""
+    OSystem = args.OSystem
+    save_path = args.output
     if path.endswith('.tar'):
-        cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
-            path, save_path, filename)
+        if OSystem in ["Linux", "Windows"]:
+            cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
+                path, save_path, filename)
+        elif OSystem == "Darwin":
+            cmd = "gtar -xf {} --transform='s/.*\///' -C {} {}".format(
+                path, save_path, filename)
+        else:
+            print >> sys.stderr, "Unsupported OSystem, trying Tar anyway, OS:", OSystem
+            cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
+                path, save_path, filename)
     else:
         cmd = "cp {} {}".format(filename, os.path.join(
             save_path, filename.split('/')[-1]))

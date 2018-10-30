@@ -6,7 +6,6 @@
 
 **fast5_fetcher** is a tool for fetching nanopore fast5 files to save time and simplify downstream analysis.
 
-
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
 
 ## Contents
@@ -21,9 +20,11 @@ Reducing the number of fast5 files per folder in a single experiment was a welco
 
 Following a self imposed guideline, most things written to handle nanopore data or bioinformatics in general, will use as little 3rd party libraries as possible, aiming for only core libraries, or have all included files in the package.
 
-In the case of `fast5_fetcher.py` and `batch_tater.py`, only core python libraries are used. So as long as **Python 2.7+** is present, everything should work with no extra steps. (Python 3 compatibility is coming in the next update)
+In the case of `fast5_fetcher.py` and `batch_tater.py`, only core python libraries are used. So as long as **Python 2.7+** is present, everything should work with no extra steps. (Python 3 compatibility is coming in the next big update)
 
-There is one catch. Everything is written primarily for use with **Linux**. Due to **MacOS** running on Unix, so long as the GNU tools are installed, there should be minimal issues running it. **Windows 10** however may require more massaging to work with the new Linux integration.
+##### Operating system:
+
+There is one catch. Everything is written primarily for use with **Linux**. Due to **MacOS** running on Unix, so long as the GNU tools are installed (see below), there should be minimal issues running it. **Windows 10** however may require more massaging to work with the new Linux integration.
 
 # Getting Started
 
@@ -186,6 +187,14 @@ gzip all.name.index
 Download the repository:
 
     git clone https://github.com/Psy-Fer/fast5_fetcher.git
+
+If using MacOS, and NOT using homebrew, install it here:
+
+    https://brew.sh/
+
+then install gnu-tar with:
+
+    brew install gnu-tar
 
 ### Quick start
 
@@ -355,13 +364,13 @@ echo $CMD && $CMD
 
 ## Acknowledgements
 
-I would like to thank the rest of my lab (Shaun Carswell, Kirston Barton) in Genomic Technologies team from the [Garvan Institute](https://www.garvan.org.au/) for their feedback on the development of this tool.
+I would like to thank the rest of my lab (Shaun Carswell, Kirston Barton, Kai Martin) in Genomic Technologies team from the [Garvan Institute](https://www.garvan.org.au/) for their feedback on the development of this tool.
 
 ## Cite
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
 
-James M. Ferguson, & Martin A. Smith. (2018, September 12). Psy-Fer/fast5_fetcher: Initial release of fast5_fetcher (Version v1.0). Zenodo. http://doi.org/10.5281/zenodo.1413903
+James M. Ferguson, & Martin A. Smith. (2018, September 12). Psy-Fer/fast5_fetcher: Initial release of fast5_fetcher (Version v1.0). Zenodo. <http://doi.org/10.5281/zenodo.1413903>
 
 ## License
 
