@@ -63,7 +63,7 @@ save_path = sys.argv[3]
 
 # this will probs need to be changed based on naming convention
 # I think i was a little tired when I wrote this
-# tar_name = '.'.join(tar_list.split('/')[-1].split('.')[:3])
+tar_list = tar_list.split('/')[-1]
 
 PATH = 0
 
@@ -86,4 +86,4 @@ if PATH:
 
 else:
     print >> sys.stderr, "PATH not found! check index nooblet"
-    print >> sys.stderr, "inputs:", master, tar_list, tar_name
+    print >> sys.stderr, "inputs:", master, tar_list, save_path
