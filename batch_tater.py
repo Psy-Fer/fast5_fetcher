@@ -86,4 +86,4 @@ if PATH:
 
 else:
     print >> sys.stderr, "PATH not found! check index nooblet"
-    print >> sys.stderr, "inputs:", index, tar_list, tar_name
+    print >> sys.stderr, "inputs:", master, tar_list, tar_name
