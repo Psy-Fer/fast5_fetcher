@@ -63,7 +63,7 @@ save_path = sys.argv[3]
 
 # this will probs need to be changed based on naming convention
 # I think i was a little tired when I wrote this
-tar_list = tar_list.split('/')[-1]
+list_name = tar_list.split('/')[-1]
 
 PATH = 0
 
@@ -72,7 +72,7 @@ with open(master, 'r') as f:
     for l in f:
         l = l.strip('\n')
         l = l.split('\t')
-        if l[0] == tar_list:
+        if l[0] == list_name:
             PATH = l[1]
             break
 
