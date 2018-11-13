@@ -140,6 +140,7 @@ def main():
             for i in p_dic:
                 fname = "tater_" + i.split('/')[-1] + ".txt"
                 m_entry = "{}\t{}".format(fname, i)
+                fname = args.output + "/tater_" + i.split('/')[-1] + ".txt"
                 m.write(m_entry)
                 m.write('\n')
                 with open(fname, 'w') as f:
