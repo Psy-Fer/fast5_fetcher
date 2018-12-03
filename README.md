@@ -10,6 +10,27 @@
 
 ## Contents
 
+<!--ts-->
+
+-   [Background](#Background)
+-   [Requirements](#Requirements)
+-   [Installation](#installation)
+-   [Getting Started](<#Getting Started>)
+    -   [File structures](<#File structures>)
+        -   [1. Raw structure (not preferred)](<#1. Raw structure>)
+        -   [2. Local basecalled structure](<#2. Local basecalled structure>)
+        -   [3. Parallel basecalled structure](<#3. Parallel basecalled structure>)
+    -   [Inputs](#Inputs)
+-   [Instructions for use](<#Instructions for use>)
+    -   [Quick start](<#Quick start>)
+    -   [fast5_fetcher.py](#fast5_fetcher.py)
+        -   [Examples](#Examples)
+    -   [batch_tater.py](#batch_tater.py)
+-   [Acknowledgements](#Acknowledgements)
+-   [Cite](#Cite)
+-   [License](#License)
+    <!--te-->
+
 # Background
 
 Reducing the number of fast5 files per folder in a single experiment was a welcomed addition to MinKnow. However this also made it rather useful for manual basecalling on a cluster, using array jobs, where each folder is basecalled individually, producing its own `sequencing_summary.txt`, `reads.fastq`, and reads folder containing the newly basecalled fast5s. Taring those fast5 files up into a single file was needed to keep the sys admins at bay, complaining about our millions of individual files on their drives. This meant, whenever there was a need to use the fast5 files from an experiment, or many experiments, unpacking the fast5 files was a significant hurdle both in time and disk space.
@@ -230,25 +251,35 @@ See examples below for use on an **HPC** using **SGE**
 
 #### Full usage
 
-    usage: fast5_fetcher.py [-h] [-q FASTQ | -p PAF | -f FLAT] [-s SEQ_SUM]
-                        [-i INDEX] [-o OUTPUT] [-z]
+    usage: fast5_fetcher.py [-h] [-q FASTQ | -p PAF | -f FLAT] [--OSystem OSYSTEM]
+                            [-s SEQ_SUM] [-i INDEX] [-o OUTPUT] [-t]
+                            [-l TRIM_LIST] [-x PREFIX] [-z]
 
     fast_fetcher - extraction of specific nanopore fast5 files
 
     optional arguments:
-    -h, --help            show this help message and exit
-    -q FASTQ, --fastq FASTQ
-                        fastq.gz for read ids
-    -p PAF, --paf PAF     paf alignment file for read ids
-    -f FLAT, --flat FLAT  flat file of read ids
-    -s SEQ_SUM, --seq_sum SEQ_SUM
-                        sequencing_summary.txt.gz file
-    -i INDEX, --index INDEX
-                        index.gz file mapping fast5 files in tar archives
-    -o OUTPUT, --output OUTPUT
-                        output directory for extracted fast5s
-    -z, --pppp            Print out tar commands in batches for further
-                        processing
+      -h, --help            show this help message and exit
+      -q FASTQ, --fastq FASTQ
+                            fastq.gz for read ids
+      -p PAF, --paf PAF     paf alignment file for read ids
+      -f FLAT, --flat FLAT  flat file of read ids
+      --OSystem OSYSTEM     running operating system - leave default unless doing
+                            odd stuff
+      -s SEQ_SUM, --seq_sum SEQ_SUM
+                            sequencing_summary.txt.gz file
+      -i INDEX, --index INDEX
+                            index.gz file mapping fast5 files in tar archives
+      -o OUTPUT, --output OUTPUT
+                            output directory for extracted fast5s
+      -t, --trim            trim files as if standalone experiment, (fq, SS)
+      -l TRIM_LIST, --trim_list TRIM_LIST
+                            list of file names to trim, comma separated. fastq
+                            only needed for -p and -f modes
+      -x PREFIX, --prefix PREFIX
+                            trim file prefix, eg: barcode_01, output:
+                            barcode_01.fastq, barcode_01_seq_sum.txt
+      -z, --pppp            Print out tar commands in batches for further
+                            processing
 
 ## Examples
 
@@ -314,6 +345,12 @@ CMD="qsub -cwd -V -pe smp 1 -N F5F -S /bin/bash -t 1-12 -l mem_requested=20G,h_v
 
 echo $CMD && $CMD
 ```
+
+## Trimming fastq and sequencing_summary files
+
+By using the `-t, --trim` option, each barcode will also have its own sequencing_summary file for downstream analysis. This is particularly useful if each barcode is a different sample or experiment, as the output is as if it was it's own individual flowcell.
+
+This method can also trim fastq, and sequencing_summary files when using the **paf** or **flat** methods. By using the prefix option, you can label the output names, otherwise generic defaults will be used.
 
 ## batch_tater.py
 

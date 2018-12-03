@@ -29,6 +29,7 @@ from functools import partial
     version 1.0   - First release
     version 1.1   - refactor with dicswitch and batch_tater updates
     version 1.1.1 - Bug fix on --transform method, added OS detection
+    version 1.2.0 - Added file trimming to fully segment selection
 
     TODO:
         - Python 3 compatibility
@@ -36,7 +37,7 @@ from functools import partial
         - autobuild index file - make it a sub script as well
         - Consider using csv.DictReader() instead of wheel building
         - flesh out batch_tater and give better examples and clearer how-to
-        - options to build new index/SS of fetched fast5s
+        - options to build new index of fetched fast5s
 
     -----------------------------------------------------------------------------
     MIT License
@@ -91,6 +92,12 @@ def main():
                         help="index.gz file mapping fast5 files in tar archives")
     parser.add_argument("-o", "--output",
                         help="output directory for extracted fast5s")
+    parser.add_argument("-t", "--trim", action="store_true",
+                        help="trim files as if standalone experiment, (fq, SS)")
+    parser.add_argument("-l", "--trim_list",
+                        help="list of file names to trim, comma separated. fastq only needed for -p and -f modes")
+    parser.add_argument("-x", "--prefix", default="default",
+                        help="trim file prefix, eg: barcode_01, output: barcode_01.fastq, barcode_01_seq_sum.txt")
     # parser.add_argument("-t", "--procs", type=int,
     #                    help="Number of CPUs to use - TODO: NOT YET IMPLEMENTED")
     parser.add_argument("-z", "--pppp", action="store_true",
@@ -108,14 +115,53 @@ def main():
     if args.pppp:
         print >> sys.stderr, "PPPP state! Not extracting, exporting tar commands"
 
+    trim_pass = False
+    if args.trim:
+        SS = False
+        FQ = False
+        if args.trim_list:
+            A = args.trim_list.split(',')
+            for a in A:
+                if "fastq" in a:
+                    FQ = a
+                elif "txt" in a:
+                    SS = a
+                else:
+                    print >> sys.stderr, "Unknown trim input. detects 'fastq' or 'txt' for files. Input:", a
+        else:
+            print >> sys.stderr, "No extra files given. Compatible with -q fastq input only"
+
+        if args.fastq:
+            FQ = args.fastq
+        if args.seq_sum:
+            SS = args.seq_sum
+
+        # final check
+        if FQ and SS:
+            trim_pass = True
+            print >> sys.stderr, "Trim setting detected. Writing to working direcory"
+        else:
+            print >> sys.stderr, "Unable to verify both fastq and sequencing_summary files. Please check filenames and try again. Exiting..."
+            sys.exit()
+
     ids = []
     if args.fastq:
         ids = get_fq_reads(args.fastq)
+        if trim_pass:
+            trim_SS(args, ids, SS)
     elif args.paf:
         ids = get_paf_reads(args.paf)
+        if trim_pass:
+            trim_both(args, ids, FQ, SS)
     elif args.flat:
         ids = get_flat_reads(args.flat)
-    filenames = get_filenames(args.seq_sum, ids)
+        if trim_pass:
+            trim_both(args, ids, FQ, SS)
+    if not ids and trim_pass:
+        filenames, ids = get_filenames(args.seq_sum, ids)
+        trim_both(args, ids, FQ, SS)
+    else:
+        filenames, ids = get_filenames(args.seq_sum, ids)
 
     paths = get_paths(args.index, filenames)
     print >> sys.stderr, "extracting..."
@@ -233,6 +279,71 @@ def get_flat_reads(filename):
     return read_ids
 
 
+def trim_SS(args, ids, SS):
+    '''
+    Trims the sequencing_summary.txt file to only the input IDs
+    '''
+    if args.prefix:
+        pre = args.prefix + "_seq_sum.txt"
+    else:
+        pre = "trimmed_seq_sum.txt"
+    head = True
+    if SS.endswith('.gz'):
+        f_read = dicSwitch('gz')
+    else:
+        f_read = dicSwitch('norm')
+    # make this compatible with dicSwitch
+    with open(pre, "w") as w:
+        with f_read(SS, 'rb') as sz:
+            if SS.endswith('.gz'):
+                sz = io.BufferedReader(sz)
+            for line in sz:
+                if head:
+                    w.write(line)
+                    head = False
+                    continue
+                l = line.split()
+                if l[1] in ids:
+                    w.write(line)
+
+
+def trim_both(args, ids, FQ, SS):
+    '''
+    Trims the sequencing_summary.txt and fastq files to only the input IDs
+    '''
+    # trim the SS
+    trim_SS(args, ids, SS)
+    if args.prefix:
+        pre = args.prefix + ".fastq"
+    else:
+        pre = "trimmed.fastq"
+
+    # trim the fastq
+    c = 0
+    P = False
+    if FQ.endswith('.gz'):
+        f_read = dicSwitch('gz')
+    else:
+        f_read = dicSwitch('norm')
+    with open(pre, "w") as w:
+        with f_read(FQ, 'rb') as fq:
+            if FQ.endswith('.gz'):
+                fq = io.BufferedReader(fq)
+            for line in fq:
+                c += 1
+                if c == 1:
+                    if line.split()[0][1:] in ids:
+                        P = True
+                        w.write(line)
+                elif P and c < 4:
+                    w.write(line)
+                elif c >= 4:
+                    if P:
+                        w.write(line)
+                    c = 0
+                    P = False
+
+
 def get_filenames(seq_sum, ids):
     '''
     match read ids with seq_sum to pull filenames
@@ -241,7 +352,7 @@ def get_filenames(seq_sum, ids):
     ss_only = False
     if not ids:
         ss_only = True
-
+        ids = set()
     head = True
     files = set()
     if seq_sum.endswith('.gz'):
@@ -259,10 +370,11 @@ def get_filenames(seq_sum, ids):
             line = line.split()
             if ss_only:
                 files.add(line[0])
+                ids.add(line[1])
             else:
                 if line[1] in ids:
                     files.add(line[0])
-    return files
+    return files, ids
 
 
 def get_paths(index_file, filenames, f5=None):
