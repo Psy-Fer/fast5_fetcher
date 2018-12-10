@@ -50,7 +50,7 @@ from functools import partial
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-
+MyParser
     The above copyright notice and this permission notice shall be included in all
     copies or substantial portions of the Software.
 
@@ -453,8 +453,7 @@ def extract_file(args, path, filename):
             cmd = "tar -xf {} --transform='s/.*\///' -C {} {}".format(
                 path, save_path, filename)
     else:
-        cmd = "cp {} {}".format(filename, os.path.join(
-            save_path, filename.split('/')[-1]))
+        cmd = "cp {} {}".format(filename, save_path)
     subprocess.call(cmd, shell=True, executable='/bin/bash')
 
 
