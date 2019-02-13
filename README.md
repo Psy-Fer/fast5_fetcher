@@ -6,29 +6,34 @@
 
 **fast5_fetcher** is a tool for fetching nanopore fast5 files to save time and simplify downstream analysis.
 
+
+## **fast5_fetcher is now part of SquiggleKit located [here](https://github.com/Psy-Fer/SquiggleKit)**
+### Please use and cite SquiggleKit as it is the most up to date
+
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1413903.svg)](https://doi.org/10.5281/zenodo.1413903)
 
 ## Contents
 
 <!--ts-->
 
--   [Background](#Background)
--   [Requirements](#Requirements)
+-   [Background](#background)
+-   [Requirements](#requirements)
 -   [Installation](#installation)
--   [Getting Started](<#Getting Started>)
-    -   [File structures](<#File structures>)
+-   [Getting Started](<#getting started>)
+    -   [File structures](<#file structures>)
         -   [1. Raw structure (not preferred)](<#1. Raw structure>)
         -   [2. Local basecalled structure](<#2. Local basecalled structure>)
         -   [3. Parallel basecalled structure](<#3. Parallel basecalled structure>)
-    -   [Inputs](#Inputs)
+    -   [Inputs](#inputs)
 -   [Instructions for use](<#Instructions for use>)
     -   [Quick start](<#Quick start>)
     -   [fast5_fetcher.py](#fast5_fetcher.py)
         -   [Examples](#Examples)
     -   [batch_tater.py](#batch_tater.py)
--   [Acknowledgements](#Acknowledgements)
--   [Cite](#Cite)
--   [License](#License)
+-   [Acknowledgements](#acknowledgements)
+-   [Cite](#cite)
+-   [License](#license)
     <!--te-->
 
 # Background
